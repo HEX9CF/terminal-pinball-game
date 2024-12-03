@@ -89,7 +89,6 @@ void* game(void* arg) {
 	gameOverView();
 }
 
-// 游戏
 void keyboardHandler() {
 	chtype input;
 
