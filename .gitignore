@@ -12,9 +12,6 @@
 *.lib
 
 # Executable files
-a.out
-a.exe
-a
 *.out
 *.exe
 
@@ -23,6 +20,7 @@ a
 /bin/
 /lib/
 /out/
+/output/
 
 # CMake build files
 CMakeFiles
