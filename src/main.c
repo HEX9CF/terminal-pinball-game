@@ -4,10 +4,6 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include <algorithm>
-#include <string>
-using namespace std;
-
 long delay = 100;
 int score = 0;
 
@@ -17,18 +13,22 @@ struct Ball {
 	int y;
 	int vx;
 	int vy;
-	char str = 'O';
-} ball;
+	char ch;
+} ball = {5, 5, 2, 1, 'o'};
 
 // 板
 struct Bar {
 	int x;
 	int y;
-	string str = "[########]";
-	int length = 10;
-} bar;
+	char* str;
+	int len;
+} bar = {10, 0, "[########]", 10};
 
 void startGame();
+
+int max(int x, int y) { return x > y ? x : y; }
+
+int min(int x, int y) { return x < y ? x : y; }
 
 // 设置定时器
 int setTimer(long n_msecs) {
@@ -56,8 +56,7 @@ void gameOverView() {
 // 信号处理函数
 void update(int n) {
 	// 反弹
-	if (ball.y == bar.y - 1 && ball.x >= bar.x &&
-		ball.x <= bar.x + bar.length) {
+	if (ball.y == bar.y - 1 && ball.x >= bar.x && ball.x <= bar.x + bar.len) {
 		ball.vy = -ball.vy;
 		ball.y = bar.y - 1;
 		score++;
@@ -81,8 +80,8 @@ void update(int n) {
 	}
 
 	clear();
-	mvaddch(ball.y, ball.x, ball.str);
-	mvaddstr(bar.y, bar.x, bar.str.c_str());
+	mvaddch(ball.y, ball.x, ball.ch);
+	mvaddstr(bar.y, bar.x, bar.str);
 	refresh();
 
 	// 更新坐标
@@ -117,7 +116,7 @@ void keyboardHandler() {
 				break;
 			}
 			case 'l': {
-				bar.x = min(bar.x + 1, COLS - 1 - bar.length);
+				bar.x = min(bar.x + 1, COLS - 1 - bar.len);
 				break;
 			}
 			case 'r': {
