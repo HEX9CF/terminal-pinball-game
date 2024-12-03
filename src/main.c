@@ -1,10 +1,12 @@
 #include <curses.h>
+#include <pthread.h>
 #include <signal.h>
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
+#include <unistd.h>
 
-long delay = 100;
+long delay = 200000;
 int score = 0;
 
 // 球
@@ -20,28 +22,16 @@ struct Ball {
 struct Bar {
 	int x;
 	int y;
+	int vx;
 	char* str;
 	int len;
-} bar = {10, 0, "[########]", 10};
+} bar = {10, 0, 2, "[########]", 10};
 
 void startGame();
 
 int max(int x, int y) { return x > y ? x : y; }
 
 int min(int x, int y) { return x < y ? x : y; }
-
-// 设置定时器
-int setTimer(long n_msecs) {
-	struct itimerval new_timeset;
-	long n_sec, n_usecs;
-	n_sec = n_msecs / 1000;
-	n_usecs = (n_msecs % 1000) * 1000L;
-	new_timeset.it_interval.tv_sec = n_sec;
-	new_timeset.it_interval.tv_usec = n_usecs;
-	new_timeset.it_value.tv_sec = n_sec;
-	new_timeset.it_value.tv_usec = n_usecs;
-	return setitimer(ITIMER_REAL, &new_timeset, NULL);
-}
 
 // 游戏结束画面
 void gameOverView() {
@@ -53,46 +43,50 @@ void gameOverView() {
 	refresh();
 }
 
-// 信号处理函数
-void update(int n) {
-	// 反弹
-	if (ball.y == bar.y - 1 && ball.x >= bar.x && ball.x <= bar.x + bar.len) {
-		ball.vy = -ball.vy;
-		ball.y = bar.y - 1;
-		score++;
-		beep();
-	}
+// 游戏
+void* game(void* arg) {
+	while (1) {
+		// 反弹
+		if (ball.y == bar.y - 1 && ball.x >= bar.x &&
+			ball.x <= bar.x + bar.len) {
+			ball.vy = -ball.vy;
+			ball.y = bar.y - 1;
+			score++;
+			beep();
+		}
 
-	// 变换方向
-	if (ball.x == COLS) {
-		ball.vx = -ball.vx;
-		ball.x = COLS - 1;
-		beep();
-	} else if (ball.x < 0) {
-		ball.vx = -ball.vx;
-		ball.x = 0;
-		beep();
-	}
-	if (ball.y < 0) {
-		ball.vy = -ball.vy;
-		ball.y = 0;
-		beep();
-	}
+		// 变换方向
+		if (ball.x >= COLS) {
+			ball.vx = -ball.vx;
+			ball.x = COLS - 1;
+			beep();
+		} else if (ball.x < 0) {
+			ball.vx = -ball.vx;
+			ball.x = 0;
+			beep();
+		}
+		if (ball.y < 0) {
+			ball.vy = -ball.vy;
+			ball.y = 0;
+			beep();
+		}
 
-	clear();
-	mvaddch(ball.y, ball.x, ball.ch);
-	mvaddstr(bar.y, bar.x, bar.str);
-	refresh();
+		clear();
+		mvaddch(ball.y, ball.x, ball.ch);
+		mvaddstr(bar.y, bar.x, bar.str);
+		refresh();
 
-	// 更新坐标
-	ball.x += ball.vx;
-	ball.y += ball.vy;
+		// 更新坐标
+		ball.x += ball.vx;
+		ball.y += ball.vy;
 
-	// game over
-	if (ball.y >= bar.y) {
-		setTimer(0);
-		gameOverView();
+		// game over
+		if (ball.y >= bar.y) {
+			break;
+		}
+		usleep(delay);
 	}
+	gameOverView();
 }
 
 // 游戏
@@ -107,16 +101,16 @@ void keyboardHandler() {
 				break;
 			}
 			case 'k': {
-				ball.vx /= 2;
-				ball.vy /= 2;
+				ball.vx = max(ball.vx / 2, 1);
+				ball.vy = max(ball.vy / 2, 1);
 				break;
 			}
 			case 'h': {
-				bar.x = max(bar.x - 1, 0);
+				bar.x = max(bar.x - bar.vx, 0);
 				break;
 			}
 			case 'l': {
-				bar.x = min(bar.x + 1, COLS - 1 - bar.len);
+				bar.x = min(bar.x + bar.vx, COLS - 1 - bar.len);
 				break;
 			}
 			case 'r': {
@@ -138,9 +132,8 @@ void startGame() {
 	bar.y = LINES - 1;
 	score = 0;
 
-	// 设置定时器
-	signal(SIGALRM, update);
-	setTimer(delay);
+	pthread_t threadGame;
+	pthread_create(&threadGame, NULL, game, NULL);
 
 	keyboardHandler();
 }
