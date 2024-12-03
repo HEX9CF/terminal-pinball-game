@@ -10,7 +10,7 @@
 				"-g",
 				"${file}",
 				"-o",
-				"${fileDirname}/bin/${fileBasenameNoExtension}",
+				"${workspaceFolder}/bin/${fileBasenameNoExtension}",
 				"-lncurses"
 			],
 			"options": {
