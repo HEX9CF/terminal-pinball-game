@@ -1,0 +1,43 @@
+# Compiled object files
+*.o
+*.obj
+
+# Compiled dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled static libraries
+*.a
+*.lib
+
+# Executable files
+a.out
+a.exe
+a
+*.out
+*.exe
+
+# Build directories
+/build/
+/bin/
+/lib/
+/out/
+
+# CMake build files
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Other generated files
+*.log
+*.tmp
+*.swp
+*.swo
+*.bak
+*.d
+*.dep
+*.dSYM/
+*.stackdump
+
