@@ -9,6 +9,7 @@
 using namespace std;
 
 long delay = 100;
+int score = 0;
 
 // 球
 struct Ball {
@@ -45,7 +46,8 @@ int setTimer(long n_msecs) {
 // 游戏结束画面
 void gameOverView() {
 	clear();
-	mvprintw(LINES / 2 - 1, COLS / 2 - 10, "Game Over!");
+	mvprintw(LINES / 2 - 2, COLS / 2 - 10, "Game Over!");
+	mvprintw(LINES / 2 - 1, COLS / 2 - 10, "score: %d", score);
 	mvprintw(LINES / 2 + 1, COLS / 2 - 10, "Press 'q' to quit");
 	mvprintw(LINES / 2 + 2, COLS / 2 - 10, "Press 'r' to restart");
 	refresh();
@@ -53,14 +55,14 @@ void gameOverView() {
 
 // 信号处理函数
 void update(int n) {
-	clear();
-	mvaddch(ball.y, ball.x, ball.str);
-	mvaddstr(bar.y, bar.x, bar.str.c_str());
-	refresh();
-
-	// 更新坐标
-	ball.x += ball.vx;
-	ball.y += ball.vy;
+	// 反弹
+	if (ball.y == bar.y - 1 && ball.x >= bar.x &&
+		ball.x <= bar.x + bar.length) {
+		ball.vy = -ball.vy;
+		ball.y = bar.y - 1;
+		score++;
+		beep();
+	}
 
 	// 变换方向
 	if (ball.x == COLS) {
@@ -76,12 +78,16 @@ void update(int n) {
 		ball.vy = -ball.vy;
 		ball.y = 0;
 		beep();
-	} else if (ball.y == bar.y - 1 && ball.x >= bar.x &&
-			   ball.x <= bar.x + bar.length) {
-		ball.vy = -ball.vy;
-		ball.y = bar.y - 1;
-		beep();
 	}
+
+	clear();
+	mvaddch(ball.y, ball.x, ball.str);
+	mvaddstr(bar.y, bar.x, bar.str.c_str());
+	refresh();
+
+	// 更新坐标
+	ball.x += ball.vx;
+	ball.y += ball.vy;
 
 	// game over
 	if (ball.y >= bar.y) {
@@ -131,6 +137,7 @@ void startGame() {
 	ball.vy = 1;
 	bar.x = 10;
 	bar.y = LINES - 1;
+	score = 0;
 
 	// 设置定时器
 	signal(SIGALRM, update);
