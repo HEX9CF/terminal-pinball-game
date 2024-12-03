@@ -3,20 +3,24 @@
 #include <sys/time.h>
 #include <time.h>
 
-#define MAX(a, b) a > b ? a : b
-#define MIN(a, b) a < b ? a : b
+#include <algorithm>
+#include <string>
+using namespace std;
 
 struct Ball {
 	int x = 10;
 	int y = 10;
-	int dir = 1;
+	int dx = 1;
+	int dy = 1;
+	int vx = 2;
+	int vy = 1;
 	char str = 'O';
 } ball;
 
 struct Bar {
 	int x = 10;
 	int y = 0;
-	char* str = "__________";
+	string str = "__________";
 	int length = 10;
 } bar;
 
@@ -37,45 +41,64 @@ int setTicker(long n_msecs) {
 void paint(int n) {
 	clear();
 	mvaddch(ball.y, ball.x, ball.str);
+	mvaddstr(bar.y, bar.x, bar.str.c_str());
 	refresh();
 
 	// 更新坐标
-	ball.x += ball.dir;
+	ball.x += ball.dx * ball.vx;
+	ball.y += ball.dy * ball.vy;
 
 	// 变换方向
 	if (ball.x == COLS) {
-		ball.dir = -1;
+		ball.dx = -1;
 		ball.x = COLS - 1;
 		beep();
 	} else if (ball.x < 0) {
-		ball.dir = 1;
+		ball.dx = 1;
 		ball.x = 0;
+		beep();
+	}
+	if (ball.y == LINES) {
+		ball.dy = -1;
+		ball.y = LINES - 1;
+		beep();
+	} else if (ball.y < 0) {
+		ball.dy = 1;
+		ball.y = 0;
 		beep();
 	}
 }
 
 int main(int argc, char* argv[]) {
+	// 初始化
 	chtype input;
 	long delay = 100;
-
-	// 初始化
 	initscr();
 	crmode();
 	noecho();
+	bar.y = LINES - 1;
 
 	// 设置定时器
 	signal(SIGALRM, paint);
 	setTicker(delay);
 	while ((input = getch()) && input != ERR && input != 'q') {
 		switch (input) {
-			case 'f': {
+			case 'j': {
 				delay /= 2;
 				setTicker(delay);
 				break;
 			}
-			case 's': {
+			case 'k': {
 				delay *= 2;
 				setTicker(delay);
+				break;
+			}
+			case 'h': {
+				bar.x = max(bar.x - 1, 0);
+				break;
+			}
+			case 'l': {
+				bar.x = min(bar.x + 1, COLS - 1 - bar.length);
 				break;
 			}
 		}
