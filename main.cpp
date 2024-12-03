@@ -7,19 +7,19 @@
 #include <string>
 using namespace std;
 
+long delay = 100;
+
 struct Ball {
-	int x = 10;
-	int y = 10;
-	int dx = 1;
-	int dy = 1;
-	int vx = 2;
-	int vy = 1;
+	int x;
+	int y;
+	int vx;
+	int vy;
 	char str = 'O';
 } ball;
 
 struct Bar {
-	int x = 10;
-	int y = 0;
+	int x;
+	int y;
 	string str = "__________";
 	int length = 10;
 } bar;
@@ -45,52 +45,73 @@ void paint(int n) {
 	refresh();
 
 	// 更新坐标
-	ball.x += ball.dx * ball.vx;
-	ball.y += ball.dy * ball.vy;
+	ball.x += ball.vx;
+	ball.y += ball.vy;
 
 	// 变换方向
 	if (ball.x == COLS) {
-		ball.dx = -1;
+		ball.vx = -ball.vx;
 		ball.x = COLS - 1;
 		beep();
 	} else if (ball.x < 0) {
-		ball.dx = 1;
+		ball.vx = -ball.vx;
 		ball.x = 0;
 		beep();
 	}
-	if (ball.y == LINES) {
-		ball.dy = -1;
-		ball.y = LINES - 1;
-		beep();
-	} else if (ball.y < 0) {
-		ball.dy = 1;
+	if (ball.y < 0) {
+		ball.vy = -ball.vy;
 		ball.y = 0;
 		beep();
+	} else if (ball.y == bar.y - 1 && ball.x >= bar.x &&
+			   ball.x <= bar.x + bar.length) {
+		ball.vy = -ball.vy;
+		ball.y = bar.y - 1;
+		beep();
+	}
+
+	// game over
+	if (ball.y >= bar.y) {
+		setTicker(0);
+		clear();
+		mvprintw(LINES / 2 - 1, COLS / 2 - 10, "Game Over!");
+		mvprintw(LINES / 2 + 1, COLS / 2 - 10, "Press 'q' to quit");
+		mvprintw(LINES / 2 + 2, COLS / 2 - 10, "Press 'r' to restart");
+		refresh();
 	}
 }
 
-int main(int argc, char* argv[]) {
-	// 初始化
-	chtype input;
-	long delay = 100;
-	initscr();
-	crmode();
-	noecho();
+void init() {
+	ball.x = 5;
+	ball.y = 5;
+	ball.vx = 2;
+	ball.vy = 1;
+	bar.x = 10;
 	bar.y = LINES - 1;
 
 	// 设置定时器
 	signal(SIGALRM, paint);
 	setTicker(delay);
+}
+
+int main(int argc, char* argv[]) {
+	chtype input;
+
+	// 初始化
+	initscr();
+	crmode();
+	noecho();
+
+	init();
 	while ((input = getch()) && input != ERR && input != 'q') {
 		switch (input) {
 			case 'j': {
-				delay /= 2;
-				setTicker(delay);
+				ball.vx *= 2;
+				ball.vy *= 2;
 				break;
 			}
 			case 'k': {
-				delay *= 2;
-				setTicker(delay);
+				ball.vx /= 2;
+				ball.vy /= 2;
 				break;
 			}
 			case 'h': {
@@ -99,6 +120,10 @@ int main(int argc, char* argv[]) {
 			}
 			case 'l': {
 				bar.x = min(bar.x + 1, COLS - 1 - bar.length);
+				break;
+			}
+			case 'r': {
+				init();
 				break;
 			}
 		}
